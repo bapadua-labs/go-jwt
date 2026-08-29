@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="go-jwt — biblioteca Go para JWT com HS256. Aprenda o que é JWT e use uma API mínima, sem dependências."
+    />
+    <title>go-jwt — JWT HS256 em Go</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1f24'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='14' font-weight='700' fill='%232dd4bf'%3Ejwt%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <header class="hero">
+      <p class="eyebrow">bapadua-labs · v1.0.0</p>
+      <h1 class="brand">go-jwt</h1>
+      <p class="tagline">
+        JWT com HS256 em Go — API mínima, sem dependências.
+        Ideal para aprender, prototipar e assinar tokens com clareza.
+      </p>
+      <div class="cta">
+        <div class="install">
+          <code id="install-cmd">go get github.com/bapadua-labs/go-jwt</code>
+          <button type="button" class="btn-copy" data-copy="go get github.com/bapadua-labs/go-jwt" aria-label="Copiar comando">
+            Copiar
+          </button>
+        </div>
+        <a
+          class="btn-link"
+          href="https://github.com/bapadua-labs/go-jwt"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section" id="jwt">
+        <h2>O que é JWT?</h2>
+        <p class="lead">
+          Um <strong>JSON Web Token</strong> é como um crachá assinado.
+          Qualquer um pode ler o que está escrito; só quem tem o
+          <em>secret</em> consegue provar que o crachá não foi adulterado.
+        </p>
+
+        <div class="anatomy" aria-label="Anatomia de um JWT">
+          <div class="token-line">
+            <span class="part header">header</span><span class="dot">.</span
+            ><span class="part payload">payload</span><span class="dot">.</span
+            ><span class="part signature">signature</span>
+          </div>
+          <ul class="parts">
+            <li>
+              <span class="swatch header"></span>
+              <div>
+                <strong>Header</strong>
+                <p>Metadados: algoritmo (<code>HS256</code>) e tipo (<code>JWT</code>).</p>
+              </div>
+            </li>
+            <li>
+              <span class="swatch payload"></span>
+              <div>
+                <strong>Payload</strong>
+                <p>
+                  As <em>claims</em> — dados como <code>sub</code> (quem é)
+                  e <code>exp</code> (quando expira). São legíveis, não criptografadas.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="swatch signature"></span>
+              <div>
+                <strong>Signature</strong>
+                <p>
+                  Prova de integridade. Com HS256, é um HMAC do header + payload
+                  usando o secret. Se alguém mudar uma vírgula, a assinatura quebra.
+                </p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flow">
+          <div class="flow-step">
+            <span class="flow-num">1</span>
+            <div>
+              <strong>Assinar</strong>
+              <p>O servidor cria o token com as claims e o secret.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num">2</span>
+            <div>
+              <strong>Verificar</strong>
+              <p>Na próxima requisição, confere a assinatura e se ainda não expirou.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="callout">
+          JWT <strong>assina</strong>, não esconde. Não coloque senhas ou dados
+          sensíveis no payload — qualquer um com o token consegue decodificá-lo.
+        </p>
+      </section>
+
+      <section class="section" id="uso">
+        <h2>Uso com go-jwt</h2>
+        <p class="lead">Duas funções. Assinar e verificar.</p>
+        <div class="code-block">
+          <pre><code><span class="kw">package</span> main
+
+<span class="kw">import</span> (
+	<span class="str">"fmt"</span>
+	<span class="str">"time"</span>
+
+	<span class="str">"github.com/bapadua-labs/go-jwt"</span>
+)
+
+<span class="kw">func</span> main() {
+	secret := <span class="str">"sua-chave-secreta-com-pelo-menos-32-bytes"</span>
+
+	claims := jwt.Claims{
+		<span class="str">"sub"</span>: <span class="str">"usuario-123"</span>,
+		<span class="str">"exp"</span>: time.Now().Add(<span class="num">24</span> * time.Hour).Unix(),
+	}
+
+	token, err := jwt.SignHS256(claims, secret)
+	<span class="comment">// ...</span>
+
+	parsed, err := jwt.VerifyHS256(token, secret)
+	fmt.Println(<span class="str">"subject:"</span>, parsed[<span class="str">"sub"</span>])
+}</code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="api">
+        <h2>API</h2>
+        <dl class="api-list">
+          <div>
+            <dt><code>SignHS256(claims, secret)</code></dt>
+            <dd>Cria um token JWT assinado com HMAC-SHA256.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyHS256(token, secret)</code></dt>
+            <dd>Valida assinatura e expiração; devolve as claims.</dd>
+          </div>
+          <div>
+            <dt><code>Claims</code></dt>
+            <dd><code>map[string]interface{}</code> — o payload do token.</dd>
+          </div>
+          <div>
+            <dt><code>HasValidExp()</code> / <code>IsExpired()</code></dt>
+            <dd>Helpers para inspecionar a claim <code>exp</code>.</dd>
+          </div>
+        </dl>
+
+        <h3>Erros</h3>
+        <dl class="api-list compact">
+          <div>
+            <dt><code>ErrInvalidToken</code></dt>
+            <dd>Token malformado ou payload ilegível.</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidSignature</code></dt>
+            <dd>Assinatura não confere ou secret incorreto.</dd>
+          </div>
+          <div>
+            <dt><code>ErrExpiredToken</code></dt>
+            <dd><code>exp</code> ausente, inválido ou no passado.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="section" id="seguranca">
+        <h2>Segurança</h2>
+        <div class="two-col">
+          <div>
+            <h3>O que a lib faz</h3>
+            <ul>
+              <li>HMAC-SHA256 com comparação timing-safe</li>
+              <li>Base64 URL-safe (padrão JWT)</li>
+              <li>Rejeita tokens sem <code>exp</code> ou expirados</li>
+            </ul>
+          </div>
+          <div>
+            <h3>O que a v1.0.0 não faz</h3>
+            <ul>
+              <li>Validação de <code>iss</code>, <code>aud</code>, <code>nbf</code></li>
+              <li>Algoritmos assimétricos (RS256, ES256…)</li>
+              <li>Revogação ou criptografia do payload</li>
+            </ul>
+          </div>
+        </div>
+        <ul class="tips">
+          <li>Use secrets fortes (mínimo recomendado: 32 bytes aleatórios).</li>
+          <li>Sempre defina <code>exp</code> com tempo de vida curto.</li>
+          <li>Transmita tokens apenas via HTTPS.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        MIT ·
+        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.0.0">v1.0.0</a>
+        ·
+        <a href="https://github.com/bapadua-labs/go-jwt">github.com/bapadua-labs/go-jwt</a>
+      </p>
+      <p class="req">Go 1.26+</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
