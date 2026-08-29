@@ -21,7 +21,7 @@
     <div class="bg" aria-hidden="true"></div>
 
     <header class="hero">
-      <p class="eyebrow">bapadua-labs · v1.1.0</p>
+      <p class="eyebrow">bapadua-labs · v1.2.0</p>
       <h1 class="brand">go-jwt</h1>
       <p class="tagline">
         JWT com HS256 em Go — API mínima, sem dependências.
@@ -103,7 +103,7 @@
             <span class="flow-num">2</span>
             <div>
               <strong>Verificar</strong>
-              <p>Na próxima requisição, confere assinatura, header (<code>alg</code>/<code>typ</code>) e expiração.</p>
+              <p>Na próxima requisição, confere secret (≥&nbsp;32&nbsp;bytes), assinatura, header (<code>alg</code>/<code>typ</code>) e expiração.</p>
             </div>
           </div>
         </div>
@@ -149,11 +149,15 @@
         <dl class="api-list">
           <div>
             <dt><code>SignHS256(claims, secret)</code></dt>
-            <dd>Cria um token JWT assinado com HMAC-SHA256.</dd>
+            <dd>Cria um token JWT assinado com HMAC-SHA256 (exige secret ≥ <code>MinSecretLen</code>).</dd>
           </div>
           <div>
             <dt><code>VerifyHS256(token, secret)</code></dt>
-            <dd>Valida assinatura, header (<code>alg</code>/<code>typ</code>) e expiração; devolve as claims.</dd>
+            <dd>Valida secret, assinatura, header (<code>alg</code>/<code>typ</code>) e expiração; devolve as claims.</dd>
+          </div>
+          <div>
+            <dt><code>MinSecretLen</code></dt>
+            <dd>Tamanho mínimo do secret em bytes (<code>32</code>).</dd>
           </div>
           <div>
             <dt><code>Claims</code></dt>
@@ -168,12 +172,16 @@
         <h3>Erros</h3>
         <dl class="api-list compact">
           <div>
+            <dt><code>ErrWeakSecret</code></dt>
+            <dd>Secret com menos de 32 bytes em <code>SignHS256</code> ou <code>VerifyHS256</code>.</dd>
+          </div>
+          <div>
             <dt><code>ErrInvalidToken</code></dt>
             <dd>Token malformado ou payload ilegível.</dd>
           </div>
           <div>
             <dt><code>ErrInvalidSignature</code></dt>
-            <dd>Assinatura não confere ou secret incorreto.</dd>
+            <dd>Assinatura não confere ou secret incorreto (com tamanho válido).</dd>
           </div>
           <div>
             <dt><code>ErrInvalidTokenType</code></dt>
@@ -196,6 +204,7 @@
               <li>Base64 URL-safe (padrão JWT)</li>
               <li>Valida header (<code>alg</code> = <code>HS256</code>; <code>typ</code> = <code>JWT</code> quando informado)</li>
               <li>Rejeita tokens sem <code>exp</code> ou expirados</li>
+              <li>Rejeita secrets com menos de 32 bytes (<code>MinSecretLen</code> / <code>ErrWeakSecret</code>)</li>
             </ul>
           </div>
           <div>
@@ -204,11 +213,12 @@
               <li>Validação de <code>iss</code>, <code>aud</code>, <code>nbf</code></li>
               <li>Algoritmos assimétricos (RS256, ES256…)</li>
               <li>Revogação ou criptografia do payload</li>
+              <li>Limite de tamanho do token</li>
             </ul>
           </div>
         </div>
         <ul class="tips">
-          <li>Use secrets fortes (mínimo recomendado: 32 bytes aleatórios).</li>
+          <li>Use secrets fortes e aleatórios (mínimo <strong>obrigatório</strong> na API: 32 bytes).</li>
           <li>Sempre defina <code>exp</code> com tempo de vida curto.</li>
           <li>Transmita tokens apenas via HTTPS.</li>
         </ul>
@@ -218,7 +228,7 @@
     <footer class="footer">
       <p>
         MIT ·
-        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.1.0">v1.1.0</a>
+        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.2.0">v1.2.0</a>
         ·
         <a href="https://github.com/bapadua-labs/go-jwt">github.com/bapadua-labs/go-jwt</a>
       </p>
