@@ -21,7 +21,7 @@
     <div class="bg" aria-hidden="true"></div>
 
     <header class="hero">
-      <p class="eyebrow">bapadua-labs · v1.0.0</p>
+      <p class="eyebrow">bapadua-labs · v1.1.0</p>
       <h1 class="brand">go-jwt</h1>
       <p class="tagline">
         JWT com HS256 em Go — API mínima, sem dependências.
@@ -103,7 +103,7 @@
             <span class="flow-num">2</span>
             <div>
               <strong>Verificar</strong>
-              <p>Na próxima requisição, confere a assinatura e se ainda não expirou.</p>
+              <p>Na próxima requisição, confere assinatura, header (<code>alg</code>/<code>typ</code>) e expiração.</p>
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@
           </div>
           <div>
             <dt><code>VerifyHS256(token, secret)</code></dt>
-            <dd>Valida assinatura e expiração; devolve as claims.</dd>
+            <dd>Valida assinatura, header (<code>alg</code>/<code>typ</code>) e expiração; devolve as claims.</dd>
           </div>
           <div>
             <dt><code>Claims</code></dt>
@@ -176,6 +176,10 @@
             <dd>Assinatura não confere ou secret incorreto.</dd>
           </div>
           <div>
+            <dt><code>ErrInvalidTokenType</code></dt>
+            <dd><code>alg</code> diferente de <code>HS256</code>, ou <code>typ</code> presente e diferente de <code>JWT</code>.</dd>
+          </div>
+          <div>
             <dt><code>ErrExpiredToken</code></dt>
             <dd><code>exp</code> ausente, inválido ou no passado.</dd>
           </div>
@@ -190,11 +194,12 @@
             <ul>
               <li>HMAC-SHA256 com comparação timing-safe</li>
               <li>Base64 URL-safe (padrão JWT)</li>
+              <li>Valida header (<code>alg</code> = <code>HS256</code>; <code>typ</code> = <code>JWT</code> quando informado)</li>
               <li>Rejeita tokens sem <code>exp</code> ou expirados</li>
             </ul>
           </div>
           <div>
-            <h3>O que a v1.0.0 não faz</h3>
+            <h3>O que a lib ainda não faz</h3>
             <ul>
               <li>Validação de <code>iss</code>, <code>aud</code>, <code>nbf</code></li>
               <li>Algoritmos assimétricos (RS256, ES256…)</li>
@@ -213,7 +218,7 @@
     <footer class="footer">
       <p>
         MIT ·
-        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.0.0">v1.0.0</a>
+        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.1.0">v1.1.0</a>
         ·
         <a href="https://github.com/bapadua-labs/go-jwt">github.com/bapadua-labs/go-jwt</a>
       </p>
