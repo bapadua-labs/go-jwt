@@ -31,6 +31,7 @@ var (
 	// ErrInvalidExpiresAt indica que a data de expiração (exp) é inválida.
 	ErrInvalidExpiresAt = errors.New("jwt: data de expiração inválida")
 
-	// ErrInvalidTokenType indica que o tipo do token é inválido.
+	// ErrInvalidTokenType indica que o header tem alg ou typ inválidos
+	// (ex.: alg diferente de "HS256", ou typ presente e diferente de "JWT").
 	ErrInvalidTokenType = errors.New("jwt: tipo de token inválido")
 )

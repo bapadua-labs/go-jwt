@@ -5,6 +5,28 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Planejado
+
+- Validação de tamanho mínimo do secret
+- Exigir `exp` em `SignHS256`
+- Limite de tamanho do token
+- Suporte a `nbf` (not before)
+- Tolerância de clock skew
+- API `VerifyWithOptions` para validação de `iss` e `aud`
+
+## [1.1.0] - 2026-08-29
+
+### Adicionado
+
+- Validação do header em `VerifyHS256` (`alg` deve ser `HS256`; `typ`, se presente, deve ser `JWT`)
+- Testes de segurança para header inválido (`alg: none`, `RS256`, `alg` ausente, `typ` inválido) e `typ` omitido
+
+### Segurança
+
+- Rejeição de tokens com `alg` ou `typ` inválidos via `ErrInvalidTokenType`
+
 ## [1.0.0] - 2026-08-29
 
 ### Adicionado
@@ -27,17 +49,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Codificação Base64 URL-safe consistente entre assinatura e verificação
 - Rejeição automática de tokens sem `exp` ou com `exp` expirado em `VerifyHS256`
 
-## [Unreleased]
-
-### Planejado
-
-- Validação de tamanho mínimo do secret
-- Exigir `exp` em `SignHS256`
-- Limite de tamanho do token
-- Validação do header (`alg`, `typ`)
-- Suporte a `nbf` (not before)
-- Tolerância de clock skew
-- API `VerifyWithOptions` para validação de `iss` e `aud`
-
+[Unreleased]: https://github.com/bapadua-labs/go-jwt/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/bapadua-labs/go-jwt/releases/tag/v1.1.0
 [1.0.0]: https://github.com/bapadua-labs/go-jwt/releases/tag/v1.0.0
-[Unreleased]: https://github.com/bapadua-labs/go-jwt/compare/v1.0.0...HEAD

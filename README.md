@@ -55,7 +55,7 @@ func main() {
 | Função | Descrição |
 |--------|-----------|
 | `SignHS256(claims, secret)` | Cria um token JWT assinado |
-| `VerifyHS256(token, secret)` | Valida assinatura e expiração, retorna as claims |
+| `VerifyHS256(token, secret)` | Valida assinatura, header (`alg`/`typ`) e expiração, retorna as claims |
 
 ### Claims
 
@@ -71,6 +71,7 @@ func main() {
 |------|---------------|
 | `ErrInvalidToken` | Token malformado ou payload ilegível |
 | `ErrInvalidSignature` | Assinatura não confere ou secret incorreto |
+| `ErrInvalidTokenType` | `alg` diferente de `HS256`, ou `typ` presente e diferente de `JWT` |
 | `ErrExpiredToken` | `exp` ausente, inválido ou expirado |
 
 ## Comportamento de `exp`
@@ -85,9 +86,10 @@ func main() {
 
 - Assinatura HMAC-SHA256 com comparação timing-safe (`hmac.Equal`)
 - Codificação Base64 URL-safe (padrão JWT)
+- Validação do header (`alg` = `HS256`; `typ` = `JWT` quando informado)
 - Validação automática de expiração em `VerifyHS256`
 
-### O que a lib **não** faz (v1.0.0)
+### O que a lib **não** faz ainda
 
 - Validação de `iss`, `aud`, `sub`, `nbf` ou `iat`
 - Revogação de tokens ou suporte a `jti`

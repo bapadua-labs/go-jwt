@@ -2,6 +2,10 @@
 package jwt_test
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -11,6 +15,30 @@ import (
 )
 
 const testSecret = "minha-chave-secreta"
+
+// signedTokenWithHeader monta um JWT com header customizado e assinatura HMAC válida.
+func signedTokenWithHeader(t *testing.T, header map[string]string, claims jwt.Claims, secret string) string {
+	t.Helper()
+
+	headerBytes, err := json.Marshal(header)
+	if err != nil {
+		t.Fatalf("marshal header: %v", err)
+	}
+	payloadBytes, err := json.Marshal(claims)
+	if err != nil {
+		t.Fatalf("marshal claims: %v", err)
+	}
+
+	headerBase64 := base64.RawURLEncoding.EncodeToString(headerBytes)
+	payloadBase64 := base64.RawURLEncoding.EncodeToString(payloadBytes)
+	signingInput := headerBase64 + "." + payloadBase64
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(signingInput))
+	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+
+	return signingInput + "." + signature
+}
 
 // TestSignAndVerify valida o fluxo completo de assinatura e verificação com HS256.
 func TestSignAndVerify(t *testing.T) {
@@ -153,5 +181,50 @@ func TestVerifyHS256_MalformedToken(t *testing.T) {
 				t.Fatalf("esperava ErrInvalidToken, obteve: %v", err)
 			}
 		})
+	}
+}
+
+// TestVerifyHS256_InvalidHeader verifica rejeição de alg/typ inválidos no header.
+func TestVerifyHS256_InvalidHeader(t *testing.T) {
+	claims := jwt.Claims{
+		"sub": "1234567890",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}
+
+	tests := []struct {
+		name   string
+		header map[string]string
+	}{
+		{name: "alg none", header: map[string]string{"alg": "none", "typ": "JWT"}},
+		{name: "alg RS256", header: map[string]string{"alg": "RS256", "typ": "JWT"}},
+		{name: "alg ausente", header: map[string]string{"typ": "JWT"}},
+		{name: "typ JWE", header: map[string]string{"alg": "HS256", "typ": "JWE"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			token := signedTokenWithHeader(t, tt.header, claims, testSecret)
+			_, err := jwt.VerifyHS256(token, testSecret)
+			if !errors.Is(err, jwt.ErrInvalidTokenType) {
+				t.Fatalf("esperava ErrInvalidTokenType, obteve: %v", err)
+			}
+		})
+	}
+}
+
+// TestVerifyHS256_EmptyTypAccepted verifica que typ omitido ainda é aceito com alg HS256.
+func TestVerifyHS256_EmptyTypAccepted(t *testing.T) {
+	claims := jwt.Claims{
+		"sub": "1234567890",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}
+
+	token := signedTokenWithHeader(t, map[string]string{"alg": "HS256"}, claims, testSecret)
+	parsed, err := jwt.VerifyHS256(token, testSecret)
+	if err != nil {
+		t.Fatalf("esperava sucesso com typ vazio, obteve: %v", err)
+	}
+	if parsed["sub"] != claims["sub"] {
+		t.Fatalf("sub diferente: %v != %v", parsed["sub"], claims["sub"])
 	}
 }
