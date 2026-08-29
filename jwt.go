@@ -15,9 +15,17 @@ type Header struct {
 	Typ string `json:"typ"` // Tipo do token ("JWT" ao assinar; na verificação, vazio também é aceito).
 }
 
+// MinSecretLen é o tamanho mínimo em bytes exigido para o secret HMAC (HS256).
+const MinSecretLen = 32
+
 // SignHS256 cria um token JWT assinado com HMAC-SHA256 usando o secret informado.
 // Para que o token seja aceito por VerifyHS256, claims deve incluir "exp" com timestamp Unix válido.
+// Retorna ErrWeakSecret se o secret tiver menos de MinSecretLen bytes.
 func SignHS256(claims Claims, secret string) (string, error) {
+	if err := validateSecret(secret); err != nil {
+		return "", err
+	}
+
 	header := Header{Alg: "HS256", Typ: "JWT"}
 	headerBytes, err := json.Marshal(header)
 	if err != nil {
@@ -37,10 +45,15 @@ func SignHS256(claims Claims, secret string) (string, error) {
 }
 
 // VerifyHS256 valida a assinatura, o header (alg/typ), a expiração e devolve as claims.
-// Retorna ErrInvalidSignature se a assinatura não confere, ErrInvalidTokenType se
+// Retorna ErrWeakSecret se o secret tiver menos de MinSecretLen bytes,
+// ErrInvalidSignature se a assinatura não confere, ErrInvalidTokenType se
 // alg não for "HS256" ou typ for inválido, ErrExpiredToken se "exp" estiver
 // ausente, inválido ou no passado, e ErrInvalidToken se o token estiver malformado.
 func VerifyHS256(token, secret string) (Claims, error) {
+	if err := validateSecret(secret); err != nil {
+		return nil, err
+	}
+
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		return nil, ErrInvalidToken
@@ -73,6 +86,14 @@ func VerifyHS256(token, secret string) (Claims, error) {
 
 	return claims, nil
 
+}
+
+// validateSecret verifica se o secret tem pelo menos MinSecretLen bytes.
+func validateSecret(secret string) error {
+	if len(secret) < MinSecretLen {
+		return ErrWeakSecret
+	}
+	return nil
 }
 
 // validateHeader decodifica o header JWT e rejeita algoritmos/tipos não suportados.

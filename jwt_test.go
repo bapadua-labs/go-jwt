@@ -14,7 +14,7 @@ import (
 	"github.com/bapadua-labs/go-jwt"
 )
 
-const testSecret = "minha-chave-secreta"
+const testSecret = "sua-chave-secreta-com-pelo-menos-32-bytes"
 
 // signedTokenWithHeader monta um JWT com header customizado e assinatura HMAC válida.
 func signedTokenWithHeader(t *testing.T, header map[string]string, claims jwt.Claims, secret string) string {
@@ -66,6 +66,19 @@ func TestSignAndVerify(t *testing.T) {
 
 	if expParsed != expOriginal {
 		t.Fatalf("Exp claim diferente: %v != %v", expParsed, expOriginal)
+	}
+}
+
+// TestSignHS256_WeakSecret verifica rejeição de assinatura com secret muito curto.
+func TestSignHS256_WeakSecret(t *testing.T) {
+	claims := jwt.Claims{
+		"sub": "1234567890",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}
+
+	_, err := jwt.SignHS256(claims, "short")
+	if !errors.Is(err, jwt.ErrWeakSecret) {
+		t.Fatalf("esperava ErrWeakSecret, obteve: %v", err)
 	}
 }
 
@@ -156,7 +169,7 @@ func TestVerifyHS256_WrongSecret(t *testing.T) {
 		t.Fatalf("Erro ao assinar token: %v", err)
 	}
 
-	_, err = jwt.VerifyHS256(token, "outro-secret")
+	_, err = jwt.VerifyHS256(token, "outro-secret-com-pelo-menos-32-bytes!!")
 	if !errors.Is(err, jwt.ErrInvalidSignature) {
 		t.Fatalf("esperava ErrInvalidSignature, obteve: %v", err)
 	}
@@ -226,5 +239,23 @@ func TestVerifyHS256_EmptyTypAccepted(t *testing.T) {
 	}
 	if parsed["sub"] != claims["sub"] {
 		t.Fatalf("sub diferente: %v != %v", parsed["sub"], claims["sub"])
+	}
+}
+
+// TestVerifyHS256_WeakSecret verifica rejeição de verificação com secret muito curto.
+func TestVerifyHS256_WeakSecret(t *testing.T) {
+	claims := jwt.Claims{
+		"sub": "1234567890",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}
+
+	token, err := jwt.SignHS256(claims, testSecret)
+	if err != nil {
+		t.Fatalf("Erro ao assinar token: %v", err)
+	}
+
+	_, err = jwt.VerifyHS256(token, "segredinho")
+	if !errors.Is(err, jwt.ErrWeakSecret) {
+		t.Fatalf("esperava ErrWeakSecret, obteve: %v", err)
 	}
 }

@@ -4,6 +4,8 @@ import "errors"
 
 // Erros retornados pelas operações de assinatura e verificação de tokens.
 var (
+	// ErrWeakSecret indica que o secret é muito fraco.
+	ErrWeakSecret = errors.New("jwt: secret deve ter no mínimo 32 bytes")
 	// ErrInvalidToken indica que o token está malformado ou não pôde ser decodificado.
 	ErrInvalidToken = errors.New("jwt: token malformado ou inválido")
 

@@ -7,9 +7,17 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Adicionado
+
+- Constante `MinSecretLen` (32 bytes) e erro `ErrWeakSecret`
+- Testes de rejeição de secret curto em `SignHS256` e `VerifyHS256`
+
+### Segurança
+
+- `SignHS256` e `VerifyHS256` rejeitam secrets com menos de 32 bytes via `ErrWeakSecret`
+
 ### Planejado
 
-- Validação de tamanho mínimo do secret
 - Exigir `exp` em `SignHS256`
 - Limite de tamanho do token
 - Suporte a `nbf` (not before)

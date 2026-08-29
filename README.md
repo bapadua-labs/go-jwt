@@ -52,10 +52,11 @@ func main() {
 
 ### Assinatura e verificação
 
-| Função | Descrição |
-|--------|-----------|
-| `SignHS256(claims, secret)` | Cria um token JWT assinado |
-| `VerifyHS256(token, secret)` | Valida assinatura, header (`alg`/`typ`) e expiração, retorna as claims |
+| Função / constante | Descrição |
+|--------------------|-----------|
+| `SignHS256(claims, secret)` | Cria um token JWT assinado (exige secret ≥ `MinSecretLen`) |
+| `VerifyHS256(token, secret)` | Valida secret, assinatura, header (`alg`/`typ`) e expiração, retorna as claims |
+| `MinSecretLen` | Tamanho mínimo do secret em bytes (32) |
 
 ### Claims
 
@@ -69,8 +70,9 @@ func main() {
 
 | Erro | Quando ocorre |
 |------|---------------|
+| `ErrWeakSecret` | Secret com menos de 32 bytes em `SignHS256` ou `VerifyHS256` |
 | `ErrInvalidToken` | Token malformado ou payload ilegível |
-| `ErrInvalidSignature` | Assinatura não confere ou secret incorreto |
+| `ErrInvalidSignature` | Assinatura não confere ou secret incorreto (com tamanho válido) |
 | `ErrInvalidTokenType` | `alg` diferente de `HS256`, ou `typ` presente e diferente de `JWT` |
 | `ErrExpiredToken` | `exp` ausente, inválido ou expirado |
 
@@ -88,6 +90,7 @@ func main() {
 - Codificação Base64 URL-safe (padrão JWT)
 - Validação do header (`alg` = `HS256`; `typ` = `JWT` quando informado)
 - Validação automática de expiração em `VerifyHS256`
+- Rejeição de secrets com menos de 32 bytes (`MinSecretLen` / `ErrWeakSecret`)
 
 ### O que a lib **não** faz ainda
 
@@ -95,14 +98,13 @@ func main() {
 - Revogação de tokens ou suporte a `jti`
 - Algoritmos assimétricos (RS256, ES256, etc.)
 - Criptografia do payload (JWT é assinado, não criptografado)
-- Validação de tamanho mínimo do secret
 - Limite de tamanho do token
 
 Consulte o [CHANGELOG](CHANGELOG.md) para o roadmap de melhorias planejadas.
 
 ### Boas práticas
 
-- Use secrets fortes (mínimo recomendado: 32 bytes aleatórios)
+- Use secrets fortes e aleatórios (mínimo **obrigatório** na API: 32 bytes)
 - Sempre defina `exp` com tempo de vida curto
 - Transmita tokens apenas via HTTPS
 - Não armazene dados sensíveis no payload
