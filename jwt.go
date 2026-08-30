@@ -11,8 +11,8 @@ import (
 
 // Header representa o cabeçalho padrão de um JWT (JOSE).
 type Header struct {
-	Alg string `json:"alg"` // Algoritmo de assinatura (ex.: "HS256").
-	Typ string `json:"typ"` // Tipo do token ("JWT" ao assinar; na verificação, vazio também é aceito).
+	Alg Algorithm `json:"alg"` // Algoritmo de assinatura (ex.: "HS256").
+	Typ string    `json:"typ"` // Tipo do token ("JWT" ao assinar; na verificação, vazio também é aceito).
 }
 
 // MinSecretLen é o tamanho mínimo em bytes exigido para o secret HMAC (HS256).
@@ -26,7 +26,7 @@ func SignHS256(claims Claims, secret string) (string, error) {
 		return "", err
 	}
 
-	header := Header{Alg: "HS256", Typ: "JWT"}
+	header := Header{Alg: AlgorithmHS256, Typ: "JWT"}
 	headerBytes, err := json.Marshal(header)
 	if err != nil {
 		return "", ErrInvalidToken
@@ -109,7 +109,7 @@ func validateHeader(headerBase64 string) error {
 		return ErrInvalidToken
 	}
 
-	if header.Alg != "HS256" {
+	if !header.Alg.Valid() {
 		return ErrInvalidTokenType
 	}
 
