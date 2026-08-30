@@ -21,7 +21,7 @@
     <div class="bg" aria-hidden="true"></div>
 
     <header class="hero">
-      <p class="eyebrow">bapadua-labs · v1.2.0</p>
+      <p class="eyebrow">bapadua-labs · v1.2.1</p>
       <h1 class="brand">go-jwt</h1>
       <p class="tagline">
         JWT com HS256 em Go — API mínima, sem dependências.
@@ -160,6 +160,14 @@
             <dd>Tamanho mínimo do secret em bytes (<code>32</code>).</dd>
           </div>
           <div>
+            <dt><code>Algorithm</code> / <code>AlgorithmHS256</code></dt>
+            <dd>Tipo do algoritmo de assinatura; hoje só <code>HS256</code> é válido.</dd>
+          </div>
+          <div>
+            <dt><code>Algorithm.Valid()</code> / <code>Algorithm.String()</code></dt>
+            <dd>Informa se o algoritmo é suportado e devolve o valor JOSE (ex.: <code>"HS256"</code>).</dd>
+          </div>
+          <div>
             <dt><code>Claims</code></dt>
             <dd><code>map[string]interface{}</code> — o payload do token.</dd>
           </div>
@@ -228,7 +236,7 @@
     <footer class="footer">
       <p>
         MIT ·
-        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.2.0">v1.2.0</a>
+        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.2.1">v1.2.1</a>
         ·
         <a href="https://github.com/bapadua-labs/go-jwt">github.com/bapadua-labs/go-jwt</a>
       </p>
