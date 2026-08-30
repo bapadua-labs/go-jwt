@@ -11,6 +11,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 - Constante `MinSecretLen` (32 bytes) e erro `ErrWeakSecret`
 - Testes de rejeição de secret curto em `SignHS256` e `VerifyHS256`
+- Tipo `Algorithm` e constante `AlgorithmHS256` para o campo `alg` do header
+- Métodos `Algorithm.Valid()` e `Algorithm.String()`, com testes unitários
 
 ### Segurança
 

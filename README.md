@@ -57,6 +57,9 @@ func main() {
 | `SignHS256(claims, secret)` | Cria um token JWT assinado (exige secret ≥ `MinSecretLen`) |
 | `VerifyHS256(token, secret)` | Valida secret, assinatura, header (`alg`/`typ`) e expiração, retorna as claims |
 | `MinSecretLen` | Tamanho mínimo do secret em bytes (32) |
+| `Algorithm` / `AlgorithmHS256` | Tipo do algoritmo de assinatura; hoje só `HS256` é válido |
+| `Algorithm.Valid()` | `true` se o algoritmo é suportado |
+| `Algorithm.String()` | Valor JOSE do algoritmo (ex.: `"HS256"`) |
 
 ### Claims
 
