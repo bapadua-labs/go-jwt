@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="go-jwt — biblioteca Go para JWT com HS256 e RS256, claims tipadas e API mínima, sem dependências."
+    />
+    <title>go-jwt — JWT HS256 e RS256 em Go</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1f24'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='monospace' font-size='14' font-weight='700' fill='%232dd4bf'%3Ejwt%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <header class="hero">
+      <p class="eyebrow">bapadua-labs · v1.0.0</p>
+      <h1 class="brand">go-jwt</h1>
+      <p class="tagline">
+        JWT com HS256 e RS256 em Go — API mínima, sem dependências.
+        Ideal para aprender, prototipar e assinar tokens com clareza.
+      </p>
+      <div class="cta">
+        <div class="install">
+          <code id="install-cmd">go get github.com/bapadua-labs/go-jwt@v1.0.0</code>
+          <button type="button" class="btn-copy" data-copy="go get github.com/bapadua-labs/go-jwt@v1.0.0" aria-label="Copiar comando">
+            Copiar
+          </button>
+        </div>
+        <a
+          class="btn-link"
+          href="https://github.com/bapadua-labs/go-jwt"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section" id="jwt">
+        <h2>O que é JWT?</h2>
+        <p class="lead">
+          Um <strong>JSON Web Token</strong> é como um crachá assinado.
+          Qualquer um pode ler o que está escrito; só quem tem a
+          <em>chave certa</em> consegue provar que o crachá não foi adulterado.
+        </p>
+
+        <div class="anatomy" aria-label="Anatomia de um JWT">
+          <div class="token-line">
+            <span class="part header">header</span><span class="dot">.</span
+            ><span class="part payload">payload</span><span class="dot">.</span
+            ><span class="part signature">signature</span>
+          </div>
+          <ul class="parts">
+            <li>
+              <span class="swatch header"></span>
+              <div>
+                <strong>Header</strong>
+                <p>Metadados: algoritmo (<code>HS256</code> ou <code>RS256</code>) e tipo (<code>JWT</code>).</p>
+              </div>
+            </li>
+            <li>
+              <span class="swatch payload"></span>
+              <div>
+                <strong>Payload</strong>
+                <p>
+                  As <em>claims</em> — dados como <code>sub</code>, <code>exp</code>,
+                  <code>nbf</code>, <code>iat</code>, <code>iss</code>, <code>aud</code> e <code>jti</code>.
+                  São legíveis, não criptografadas.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="swatch signature"></span>
+              <div>
+                <strong>Signature</strong>
+                <p>
+                  Prova de integridade. Com HS256, HMAC do header + payload com o secret.
+                  Com RS256, assinatura RSA-SHA256 com a chave privada.
+                  Se alguém mudar uma vírgula, a assinatura quebra.
+                </p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flow">
+          <div class="flow-step">
+            <span class="flow-num">1</span>
+            <div>
+              <strong>Assinar</strong>
+              <p>O servidor cria o token com as claims — secret (HS256) ou chave privada RSA (RS256).</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num">2</span>
+            <div>
+              <strong>Verificar</strong>
+              <p>Confere assinatura, header (<code>alg</code>/<code>typ</code>), <code>exp</code> e <code>nbf</code> — com o secret ou a chave pública correspondente.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="callout">
+          JWT <strong>assina</strong>, não esconde. Não coloque senhas ou dados
+          sensíveis no payload — qualquer um com o token consegue decodificá-lo.
+        </p>
+      </section>
+
+      <section class="section" id="uso">
+        <h2>Uso com go-jwt</h2>
+        <p class="lead">HS256 — secret compartilhado, claims tipadas.</p>
+        <div class="code-block">
+          <pre><code><span class="kw">package</span> main
+
+<span class="kw">import</span> (
+	<span class="str">"fmt"</span>
+	<span class="str">"time"</span>
+
+	<span class="str">"github.com/bapadua-labs/go-jwt"</span>
+)
+
+<span class="kw">type</span> MyClaims <span class="kw">struct</span> {
+	jwt.RegisteredClaims
+	Role <span class="kw">string</span> <span class="str">`json:"role"`</span>
+}
+
+<span class="kw">func</span> main() {
+	secret := <span class="str">"sua-chave-secreta-com-pelo-menos-32-bytes"</span>
+
+	token, err := jwt.SignHS256(MyClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   <span class="str">"usuario-123"</span>,
+			ExpiresAt: time.Now().Add(<span class="num">24</span> * time.Hour).Unix(),
+		},
+		Role: <span class="str">"admin"</span>,
+	}, secret)
+	<span class="comment">// ...</span>
+
+	parsed, err := jwt.VerifyHS256As[MyClaims](token, secret, jwt.VerifyOptions{})
+	fmt.Println(<span class="str">"subject:"</span>, parsed.Subject, <span class="str">"role:"</span>, parsed.Role)
+}</code></pre>
+        </div>
+        <p class="callout">Ainda é possível usar o mapa <code>jwt.Claims</code> com <code>VerifyHS256</code> se preferir.</p>
+
+        <p class="lead" style="margin-top: 2rem">RS256 — chave privada para assinar, pública para verificar.</p>
+        <div class="code-block">
+          <pre><code><span class="kw">package</span> main
+
+<span class="kw">import</span> (
+	<span class="str">"crypto/rand"</span>
+	<span class="str">"crypto/rsa"</span>
+	<span class="str">"fmt"</span>
+	<span class="str">"time"</span>
+
+	<span class="str">"github.com/bapadua-labs/go-jwt"</span>
+)
+
+<span class="kw">type</span> MyClaims <span class="kw">struct</span> {
+	jwt.RegisteredClaims
+	Role <span class="kw">string</span> <span class="str">`json:"role"`</span>
+}
+
+<span class="kw">func</span> main() {
+	privateKey, err := rsa.GenerateKey(rand.Reader, <span class="num">2048</span>)
+	<span class="comment">// ...</span>
+
+	token, err := jwt.SignRS256(MyClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   <span class="str">"usuario-123"</span>,
+			ExpiresAt: time.Now().Add(<span class="num">15</span> * time.Minute).Unix(),
+		},
+		Role: <span class="str">"admin"</span>,
+	}, privateKey)
+	<span class="comment">// ...</span>
+
+	parsed, err := jwt.VerifyRS256As[MyClaims](token, &amp;privateKey.PublicKey, jwt.VerifyOptions{})
+	fmt.Println(<span class="str">"subject:"</span>, parsed.Subject, <span class="str">"role:"</span>, parsed.Role)
+}</code></pre>
+        </div>
+
+        <p class="lead" style="margin-top: 2rem">Com options — <code>iss</code>, <code>aud</code>, <code>MaxAge</code>, clock skew, <code>MaxTokenLen</code> e revogação.</p>
+        <div class="code-block">
+          <pre><code>parsed, err := jwt.VerifyHS256WithOptions(token, secret, jwt.VerifyOptions{
+	Issuer:          <span class="str">"meu-issuer"</span>,
+	Audience:        <span class="str">"minha-api"</span>,
+	MaxAge:          time.Hour,        <span class="comment">// exige iat; rejeita se idade &gt; MaxAge</span>
+	EnableClockSkew: <span class="kw">true</span>,             <span class="comment">// liga a tolerância de relógio</span>
+	ClockSkew:       <span class="num">30</span> * time.Second, <span class="comment">// folga em exp/nbf/iat</span>
+	MaxTokenLen:     <span class="num">8192</span>,             <span class="comment">// rejeita token maior que N bytes</span>
+	RevocationStore: jwt.RevocationFunc(<span class="kw">func</span>(jti <span class="kw">string</span>) <span class="kw">bool</span> {
+		<span class="comment">// consulte Redis/DB do seu app; true = revogado</span>
+		<span class="kw">return</span> <span class="kw">false</span>
+	}),
+})
+<span class="comment">// VerifyRS256WithOptions segue o mesmo padrão</span></code></pre>
+        </div>
+
+        <p class="lead" style="margin-top: 2rem">Revogação — implemente <code>IsRevoked</code> no app (ex.: Redis). A lib não conecta a banco.</p>
+        <div class="code-block">
+          <pre><code><span class="kw">package</span> main
+
+<span class="kw">import</span> (
+	<span class="str">"context"</span>
+	<span class="str">"time"</span>
+
+	<span class="str">"github.com/bapadua-labs/go-jwt"</span>
+	<span class="str">"github.com/redis/go-redis/v9"</span>
+)
+
+<span class="kw">func</span> main() {
+	rdb := redis.NewClient(&amp;redis.Options{Addr: <span class="str">"localhost:6379"</span>})
+	ctx := context.Background()
+
+	<span class="comment">// No logout: rdb.Set(ctx, "jwt:revoked:"+jti, "1", time.Until(expTime))</span>
+
+	store := jwt.RevocationFunc(<span class="kw">func</span>(jti <span class="kw">string</span>) <span class="kw">bool</span> {
+		n, err := rdb.Exists(ctx, <span class="str">"jwt:revoked:"</span>+jti).Result()
+		<span class="kw">if</span> err != <span class="kw">nil</span> {
+			<span class="kw">return</span> <span class="kw">true</span> <span class="comment">// fail-closed</span>
+		}
+		<span class="kw">return</span> n &gt; <span class="num">0</span>
+	})
+
+	<span class="kw">type</span> MyClaims <span class="kw">struct</span> {
+		jwt.RegisteredClaims
+	}
+
+	token, err := jwt.SignHS256(MyClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   <span class="str">"usuario-123"</span>,
+			ID:        <span class="str">"uuid-unico-do-token"</span>,
+			ExpiresAt: time.Now().Add(<span class="num">15</span> * time.Minute).Unix(),
+		},
+	}, <span class="str">"sua-chave-secreta-com-pelo-menos-32-bytes"</span>)
+	<span class="comment">// ...</span>
+
+	parsed, err := jwt.VerifyHS256As[MyClaims](token, <span class="str">"sua-chave-secreta-com-pelo-menos-32-bytes"</span>, jwt.VerifyOptions{
+		RevocationStore: store,
+	})
+	<span class="comment">// err == jwt.ErrTokenRevoked se o jti estiver na denylist</span>
+	_ = parsed
+}</code></pre>
+        </div>
+        <p class="callout">
+          Emita tokens com <code>jti</code> único. Sem <code>jti</code>, a checagem de revogação é ignorada.
+          No logout, grave o <code>jti</code> no Redis com TTL alinhado ao <code>exp</code>.
+        </p>
+      </section>
+
+      <section class="section" id="api">
+        <h2>API</h2>
+        <dl class="api-list">
+          <div>
+            <dt><code>SignHS256(claims, secret)</code></dt>
+            <dd>Cria um token JWT assinado com HMAC-SHA256 (exige secret ≥ <code>MinSecretLen</code>); <code>claims</code> pode ser mapa ou struct.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyHS256(token, secret)</code></dt>
+            <dd>Valida secret, assinatura, header, <code>exp</code> e <code>nbf</code> (se presente).</dd>
+          </div>
+          <div>
+            <dt><code>VerifyHS256WithOptions(token, secret, opts)</code></dt>
+            <dd>Como <code>VerifyHS256</code>, e ainda <code>iss</code>/<code>aud</code>/<code>MaxAge</code>/<code>MaxTokenLen</code>/<code>EnableClockSkew</code>+<code>ClockSkew</code>/<code>RevocationStore</code> quando preenchidos em <code>opts</code>.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyHS256As[T](token, secret, opts)</code></dt>
+            <dd>Como <code>VerifyHS256WithOptions</code>, deserializando o payload para <code>T</code> (ex.: struct com <code>RegisteredClaims</code>).</dd>
+          </div>
+          <div>
+            <dt><code>SignRS256(claims, privateKey)</code></dt>
+            <dd>Cria um token JWT assinado com RSA-SHA256 (PKCS#1 v1.5); <code>claims</code> pode ser mapa ou struct.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyRS256(token, publicKey)</code></dt>
+            <dd>Valida assinatura RSA, header, <code>exp</code> e <code>nbf</code> (se presente).</dd>
+          </div>
+          <div>
+            <dt><code>VerifyRS256WithOptions(token, publicKey, opts)</code></dt>
+            <dd>Como <code>VerifyRS256</code>, e ainda <code>iss</code>/<code>aud</code>/<code>MaxAge</code>/<code>MaxTokenLen</code>/<code>EnableClockSkew</code>+<code>ClockSkew</code>/<code>RevocationStore</code> quando preenchidos em <code>opts</code>.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyRS256As[T](token, publicKey, opts)</code></dt>
+            <dd>Como <code>VerifyRS256WithOptions</code>, deserializando o payload para <code>T</code>.</dd>
+          </div>
+          <div>
+            <dt><code>VerifyOptions</code></dt>
+            <dd><code>Issuer</code>, <code>Audience</code>, <code>MaxAge</code>, <code>MaxTokenLen</code>, <code>EnableClockSkew</code>, <code>ClockSkew</code> e <code>RevocationStore</code> opcionais.</dd>
+          </div>
+          <div>
+            <dt><code>RevocationStore</code></dt>
+            <dd>Interface com <code>IsRevoked(jti string) bool</code> — implemente com Redis/DB do app (a lib não persiste nada).</dd>
+          </div>
+          <div>
+            <dt><code>RevocationFunc</code></dt>
+            <dd>Adapter de função para <code>RevocationStore</code> (ex.: closure com o client Redis).</dd>
+          </div>
+          <div>
+            <dt><code>MinSecretLen</code></dt>
+            <dd>Tamanho mínimo do secret HMAC em bytes (<code>32</code>).</dd>
+          </div>
+          <div>
+            <dt><code>Algorithm</code> / <code>AlgorithmHS256</code> / <code>AlgorithmRS256</code></dt>
+            <dd>Tipo do algoritmo de assinatura; <code>HS256</code> e <code>RS256</code> são válidos.</dd>
+          </div>
+          <div>
+            <dt><code>Algorithm.Valid()</code> / <code>Algorithm.String()</code></dt>
+            <dd>Informa se o algoritmo é suportado e devolve o valor JOSE (ex.: <code>"HS256"</code>, <code>"RS256"</code>).</dd>
+          </div>
+          <div>
+            <dt><code>Claims</code></dt>
+            <dd><code>map[string]interface{}</code> — o payload do token.</dd>
+          </div>
+          <div>
+            <dt><code>RegisteredClaims</code></dt>
+            <dd>Struct embutível com <code>iss</code>/<code>sub</code>/<code>aud</code>/<code>exp</code>/<code>nbf</code>/<code>iat</code>/<code>jti</code> para claims tipadas.</dd>
+          </div>
+          <div>
+            <dt><code>Audience</code></dt>
+            <dd>Tipo de <code>aud</code> (string ou array JSON) usado em <code>RegisteredClaims</code>.</dd>
+          </div>
+          <div>
+            <dt><code>ID()</code></dt>
+            <dd>Extrai a claim <code>jti</code> (JWT ID); retorna <code>(string, bool)</code>.</dd>
+          </div>
+          <div>
+            <dt><code>IssuedAt()</code></dt>
+            <dd>Extrai a claim <code>iat</code> (Issued At); retorna <code>(int64, bool)</code>.</dd>
+          </div>
+          <div>
+            <dt><code>HasIssuer(expected)</code> / <code>HasAudience(expected)</code></dt>
+            <dd>Valida <code>iss</code> (string) e <code>aud</code> (string ou array).</dd>
+          </div>
+          <div>
+            <dt><code>HasValidExp()</code></dt>
+            <dd><code>true</code> se <code>exp</code> é válido e ainda não expirou (na borda <code>now == exp</code>, já é inválido).</dd>
+          </div>
+          <div>
+            <dt><code>IsValidNbf()</code></dt>
+            <dd><code>true</code> se <code>nbf</code> está ausente ou <code>now &gt;= nbf</code>.</dd>
+          </div>
+          <div>
+            <dt><code>Validate(opts)</code></dt>
+            <dd>Valida <code>exp</code>/<code>nbf</code> (com <code>ClockSkew</code> se <code>EnableClockSkew</code>) e, se preenchidos, <code>iss</code>/<code>aud</code>/<code>MaxAge</code> (via <code>iat</code>) e <code>RevocationStore</code> (via <code>jti</code>).</dd>
+          </div>
+        </dl>
+
+        <h3>Erros</h3>
+        <dl class="api-list compact">
+          <div>
+            <dt><code>ErrWeakSecret</code></dt>
+            <dd>Secret com menos de 32 bytes em <code>SignHS256</code> ou <code>VerifyHS256</code>.</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidToken</code></dt>
+            <dd>Token malformado, vazio ou payload ilegível.</dd>
+          </div>
+          <div>
+            <dt><code>ErrTokenTooLarge</code></dt>
+            <dd>Token com mais bytes que <code>opts.MaxTokenLen</code> (quando <code>MaxTokenLen &gt; 0</code>).</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidSignature</code></dt>
+            <dd>Assinatura não confere (HMAC ou RSA) ou secret incorreto (com tamanho válido).</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidTokenType</code></dt>
+            <dd><code>alg</code> diferente do esperado (<code>HS256</code>/<code>RS256</code>), ou <code>typ</code> presente e diferente de <code>JWT</code>.</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidHeader</code> / <code>ErrInvalidPayload</code></dt>
+            <dd>Falha ao serializar header ou payload em <code>SignHS256</code> ou <code>SignRS256</code>.</dd>
+          </div>
+          <div>
+            <dt><code>ErrExpiredToken</code></dt>
+            <dd><code>exp</code> ausente, inválido ou expirado.</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidNotBefore</code></dt>
+            <dd><code>nbf</code> no futuro.</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidIssuer</code> / <code>ErrInvalidAudience</code></dt>
+            <dd>Issuer ou audience inválidos (quando exigidos em <code>VerifyOptions</code>).</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidIssuedAt</code></dt>
+            <dd><code>iat</code> ausente, inválido ou no futuro além do <code>ClockSkew</code> (quando <code>opts.MaxAge &gt; 0</code>).</dd>
+          </div>
+          <div>
+            <dt><code>ErrInvalidMaxAge</code></dt>
+            <dd>Idade do token desde <code>iat</code> maior que <code>opts.MaxAge</code> (+ <code>ClockSkew</code> se <code>EnableClockSkew</code>).</dd>
+          </div>
+          <div>
+            <dt><code>ErrTokenRevoked</code></dt>
+            <dd><code>jti</code> presente e <code>RevocationStore.IsRevoked</code> retornou <code>true</code>.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="section" id="seguranca">
+        <h2>Segurança</h2>
+        <div>
+            <h3>O que a lib faz</h3>
+            <ul class="tips" style="margin-bottom: 1.5rem">
+              <li>HMAC-SHA256 com comparação timing-safe</li>
+              <li>RSA-SHA256 (RS256) com chave privada/pública</li>
+              <li>Base64 URL-safe (padrão JWT)</li>
+              <li>Valida header (<code>alg</code> esperado; <code>typ</code> = <code>JWT</code> quando informado)</li>
+              <li>Valida <code>exp</code> e <code>nbf</code> automaticamente em <code>Verify*</code></li>
+              <li>Valida <code>iss</code>/<code>aud</code>/<code>MaxAge</code> (via <code>iat</code>), <code>MaxTokenLen</code>, <code>EnableClockSkew</code>/<code>ClockSkew</code> e <code>RevocationStore</code> (via <code>jti</code>) via <code>Verify*WithOptions</code></li>
+              <li>Rejeita secrets HMAC com menos de 32 bytes (<code>MinSecretLen</code> / <code>ErrWeakSecret</code>)</li>
+              <li>Rejeita confusão de algoritmo entre HS256 e RS256</li>
+              <li>Claims tipadas com <code>RegisteredClaims</code> e <code>Verify*As[T]</code></li>
+              <li>Revogação via interface <code>RevocationStore</code> (sem acoplar Redis/DB na lib)</li>
+            </ul>
+        </div>
+        <ul class="tips">
+          <li>Em HS256, use secrets fortes e aleatórios (mínimo <strong>obrigatório</strong>: 32 bytes).</li>
+          <li>Em RS256, proteja a chave privada; distribua só a chave pública para verificação.</li>
+          <li>Sempre defina <code>exp</code> com tempo de vida curto.</li>
+          <li>Use <code>Verify*WithOptions</code> quando precisar de <code>iss</code>/<code>aud</code>, <code>MaxAge</code>, <code>MaxTokenLen</code>, clock skew ou <code>RevocationStore</code> (com <code>jti</code>).</li>
+          <li>Para revogar tokens, emita com <code>jti</code> único e implemente <code>RevocationStore</code> no seu app (ex.: Redis).</li>
+          <li>Transmita tokens apenas via HTTPS.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        MIT ·
+        <a href="https://github.com/bapadua-labs/go-jwt/releases/tag/v1.0.0">v1.0.0</a>
+        ·
+        <a href="https://github.com/bapadua-labs/go-jwt">github.com/bapadua-labs/go-jwt</a>
+      </p>
+      <p class="req">Go 1.26+</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
